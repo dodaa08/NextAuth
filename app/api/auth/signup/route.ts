@@ -1,19 +1,14 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+// app/api/auth/signup/route.ts
+import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "../../../lib/prisma";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
-  }
-
-  const { name, email, password } = req.body;
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const { name, email, password } = body;
 
   if (!name || !email || !password) {
-    return res.status(400).json({ message: "Missing fields" });
+    return NextResponse.json({ message: "Missing fields" }, { status: 400 });
   }
 
   const existingUser = await prisma.user.findUnique({
@@ -21,7 +16,7 @@ export default async function handler(
   });
 
   if (existingUser) {
-    return res.status(409).json({ message: "User already exists" });
+    return NextResponse.json({ message: "User already exists" }, { status: 409 });
   }
 
   const hashedPassword = await hash(password, 12);
@@ -34,8 +29,8 @@ export default async function handler(
     },
   });
 
-  return res.status(201).json({
+  return NextResponse.json({
     message: "User created",
     data: { id: newUser.id, email: newUser.email },
-  });
+  }, { status: 201 });
 }
